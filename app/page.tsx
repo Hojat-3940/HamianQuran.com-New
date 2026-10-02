@@ -2,28 +2,36 @@
 
 import { useState } from "react";
 
-type BoxProps = {
+type Verse = {
+  id: number;
+  verse_key: string;
+  text_uthmani: string;
+};
+
+function Box({
+  title,
+  icon,
+  children,
+}: {
   title: string;
   icon: string;
   children: React.ReactNode;
-};
-
-function Box({ title, icon, children }: BoxProps) {
+}) {
   return (
     <section
       style={{
+        background: "#fff",
         border: "1px solid #ddd",
         borderRadius: "16px",
         padding: "18px",
-        marginBottom: "16px",
-        background: "#fff",
+        marginBottom: "18px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
       }}
     >
       <h2
         style={{
-          margin: "0 0 14px",
-          fontSize: "20px",
+          margin: "0 0 16px",
+          fontSize: "21px",
           fontWeight: "700",
         }}
       >
@@ -36,24 +44,37 @@ function Box({ title, icon, children }: BoxProps) {
 }
 
 export default function HomePage() {
-  const [juz, setJuz] = useState<number | null>(null);
-  const [verses, setVerses] = useState<any[]>([]);
+  const [selectedJuz, setSelectedJuz] = useState<number | null>(null);
+  const [verses, setVerses] = useState<Verse[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  async function loadJuz(number: number) {
-    setJuz(number);
+  async function loadJuz(juzNumber: number) {
+    setSelectedJuz(juzNumber);
     setVerses([]);
+    setError("");
     setLoading(true);
 
     try {
       const response = await fetch(
-        `https://api.quran.com/api/v4/quran/verses/uthmani?juz_number=${number}`
+        `https://api.quran.com/api/v4/quran/verses/uthmani?juz_number=${juzNumber}&per_page=1000`,
+        {
+          cache: "no-store",
+        }
       );
+
+      if (!response.ok) {
+        throw new Error("خطا در دریافت قرآن");
+      }
 
       const data = await response.json();
 
       setVerses(data.verses || []);
-    } catch {
+    } catch (err) {
+      console.error(err);
+      setError(
+        "متأسفانه آیات دریافت نشد. لطفاً اتصال اینترنت را بررسی کنید."
+      );
       setVerses([]);
     } finally {
       setLoading(false);
@@ -66,7 +87,7 @@ export default function HomePage() {
       style={{
         minHeight: "100vh",
         background: "#f7f7f7",
-        padding: "20px",
+        padding: "16px",
         fontFamily: "Arial, sans-serif",
       }}
     >
@@ -80,218 +101,182 @@ export default function HomePage() {
 
         <header
           style={{
+            background: "#fff",
+            borderRadius: "16px",
+            padding: "24px 16px",
+            marginBottom: "18px",
             textAlign: "center",
-            padding: "20px 10px 28px",
+            border: "1px solid #ddd",
           }}
         >
           <h1
             style={{
-              margin: 0,
-              fontSize: "30px",
-              fontWeight: "800",
+              margin: "0 0 8px",
+              fontSize: "28px",
             }}
           >
-            HamianQuran.com
+            قرآن کریم
           </h1>
 
           <p
             style={{
-              marginTop: "8px",
-              color: "#666",
+              margin: 0,
+              color: "#777",
             }}
           >
-            قرآن کریم
+            HamianQuran.com
           </p>
         </header>
 
-        {/* تقویم */}
+        {/* ۳۰ جزء */}
 
-        <Box title="تقویم" icon="📅">
-          <div
+        <Box title="۳۰ جزء قرآن کریم" icon="📖">
+          <p
             style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(130px, 1fr))",
-              gap: "10px",
+              color: "#666",
+              marginTop: 0,
+              marginBottom: "16px",
             }}
           >
-            <button style={buttonStyle}>
-              🇮🇷 تقویم فارسی
-            </button>
-
-            <button style={buttonStyle}>
-              🌙 تقویم قمری
-            </button>
-
-            <button style={buttonStyle}>
-              🌍 تقویم میلادی
-            </button>
-          </div>
-        </Box>
-
-        {/* قرآن ۳۰ جزء */}
-
-        <Box title="نسخه کامل ۳۰ جزء قرآن" icon="📖">
-          <p style={{ color: "#666" }}>
-            انتخاب جزء برای مشاهده متن عربی قرآن
+            برای مطالعه قرآن، یکی از ۳۰ جزء را انتخاب کنید.
           </p>
 
           <div
             style={{
               display: "grid",
               gridTemplateColumns:
-                "repeat(auto-fit, minmax(80px, 1fr))",
+                "repeat(auto-fit, minmax(70px, 1fr))",
               gap: "8px",
             }}
           >
-            {Array.from({ length: 30 }, (_, i) => i + 1).map(
-              (number) => (
+            {Array.from({ length: 30 }, (_, index) => {
+              const number = index + 1;
+
+              return (
                 <button
                   key={number}
                   onClick={() => loadJuz(number)}
                   style={{
-                    ...buttonStyle,
+                    padding: "13px 6px",
+                    borderRadius: "10px",
+                    border: "1px solid #ddd",
                     background:
-                      juz === number ? "#eee" : "#fff",
-                    fontWeight:
-                      juz === number ? "700" : "400",
+                      selectedJuz === number ? "#eee" : "#fff",
+                    cursor: "pointer",
+                    fontSize: "16px",
+                    fontWeight: "600",
                   }}
                 >
                   جزء {number}
                 </button>
-              )
-            )}
+              );
+            })}
           </div>
+        </Box>
 
-          {loading && (
-            <p
-              style={{
-                textAlign: "center",
-                marginTop: "20px",
-              }}
-            >
-              در حال دریافت قرآن...
-            </p>
-          )}
+        {/* نمایش آیات */}
 
-          {!loading && juz !== null && verses.length > 0 && (
-            <div
-              style={{
-                marginTop: "20px",
-                borderTop: "1px solid #eee",
-                paddingTop: "15px",
-              }}
-            >
-              <h3>متن عربی جزء {juz}</h3>
+        {selectedJuz !== null && (
+          <Box
+            title={`متن عربی جزء ${selectedJuz}`}
+            icon="📜"
+          >
+            {loading && (
+              <p
+                style={{
+                  textAlign: "center",
+                  padding: "25px",
+                  color: "#666",
+                }}
+              >
+                در حال دریافت آیات جزء {selectedJuz}...
+              </p>
+            )}
 
-              {verses.map((verse) => (
-                <div
-                  key={verse.id}
-                  style={{
-                    padding: "16px 4px",
-                    borderBottom: "1px solid #eee",
-                    fontSize: "23px",
-                    lineHeight: "2.2",
-                    textAlign: "right",
-                  }}
-                >
-                  {verse.text_uthmani}
+            {error && (
+              <p
+                style={{
+                  color: "#b00020",
+                  textAlign: "center",
+                }}
+              >
+                {error}
+              </p>
+            )}
 
-                  <span
+            {!loading && !error && verses.length === 0 && (
+              <p
+                style={{
+                  textAlign: "center",
+                  color: "#777",
+                }}
+              >
+                آیه‌ای برای نمایش پیدا نشد.
+              </p>
+            )}
+
+            {!loading && verses.length > 0 && (
+              <div>
+                {verses.map((verse) => (
+                  <div
+                    key={verse.id}
                     style={{
-                      display: "inline-block",
-                      marginRight: "8px",
-                      fontSize: "14px",
-                      color: "#777",
+                      padding: "18px 8px",
+                      borderBottom: "1px solid #eee",
                     }}
                   >
-                    ۝ {verse.verse_key}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </Box>
+                    <div
+                      style={{
+                        fontSize: "27px",
+                        lineHeight: "2.2",
+                        textAlign: "right",
+                        fontFamily:
+                          "Amiri, Arial, sans-serif",
+                      }}
+                    >
+                      {verse.text_uthmani}
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: "8px",
+                        fontSize: "13px",
+                        color: "#777",
+                      }}
+                    >
+                      ۝ {verse.verse_key}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Box>
+        )}
 
         {/* صوت */}
 
-        <Box title="صوت عربی قرآن" icon="🔊">
+        <Box title="صوت قرآن" icon="🔊">
           <p style={{ color: "#666" }}>
-            پخش صوت قرآن
-          </p>
-
-          <audio
-            controls
-            preload="none"
-            style={{
-              width: "100%",
-            }}
-          >
-            <source
-              src="https://verses.quran.com/AbdulBaset/Murattal/mp3/001001.mp3"
-              type="audio/mpeg"
-            />
-
-            مرورگر شما از پخش صوت پشتیبانی نمی‌کند.
-          </audio>
-
-          <p
-            style={{
-              fontSize: "13px",
-              color: "#777",
-              marginTop: "10px",
-            }}
-          >
-            این بخش فعلاً برای آزمایش پخش یک آیه است.
+            پخش صوت را بعد از اینکه نمایش ۳۰ جزء را آزمایش
+            کردیم، اضافه می‌کنیم.
           </p>
         </Box>
 
-        {/* ترجمه فارسی */}
+        {/* زبان */}
 
-        <Box title="ترجمه فارسی قرآن" icon="🌐">
+        <Box title="زبان" icon="🌐">
           <p style={{ color: "#666" }}>
-            ترجمه فارسی فقط در این بخش نمایش داده می‌شود و
-            متن عربی قرآن تغییر نمی‌کند.
-          </p>
-
-          <button style={buttonStyle}>
-            نمایش ترجمه فارسی
-          </button>
-        </Box>
-
-        {/* تتر */}
-
-        <Box title="واریز حساب تتر" icon="💰">
-          <p>
-            برای حمایت از پروژه قرآن می‌توانید تتر واریز کنید.
-          </p>
-
-          <div
-            style={{
-              padding: "14px",
-              background: "#f5f5f5",
-              borderRadius: "10px",
-              direction: "ltr",
-              wordBreak: "break-all",
-              fontSize: "14px",
-            }}
-          >
-            آدرس کیف پول تتر بعداً اینجا قرار می‌گیرد.
-          </div>
-
-          <p
-            style={{
-              fontSize: "13px",
-              color: "#777",
-              marginTop: "10px",
-            }}
-          >
-            شبکه تتر نیز باید هنگام اضافه کردن آدرس مشخص شود
-            (مثلاً TRC20 یا ERC20).
+            انتخاب زبان و ترجمه در مرحله بعد اضافه می‌شود.
           </p>
         </Box>
 
-        {/* پایین سایت */}
+        {/* حمایت */}
+
+        <Box title="حمایت از پروژه" icon="💰">
+          <p style={{ color: "#666" }}>
+            اطلاعات کیف پول تتر در مرحله بعد اضافه می‌شود.
+          </p>
+        </Box>
 
         <footer
           style={{
@@ -307,12 +292,3 @@ export default function HomePage() {
     </main>
   );
 }
-
-const buttonStyle = {
-  padding: "12px 10px",
-  borderRadius: "10px",
-  border: "1px solid #ddd",
-  background: "#fff",
-  cursor: "pointer",
-  fontSize: "15px",
-};
